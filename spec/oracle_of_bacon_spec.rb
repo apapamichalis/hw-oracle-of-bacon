@@ -4,6 +4,7 @@ require 'byebug'
 require 'fakeweb'
 require 'spec_helper'
 require 'rspec/collection_matchers'
+require 'pp'                    # for printing test variable's output
 
 describe OracleOfBacon do
   before(:all) { FakeWeb.allow_net_connect = false }
@@ -38,7 +39,7 @@ describe OracleOfBacon do
       end
     end
   end
-  describe 'parsing XML response', :pending => true do
+  describe 'parsing XML response' do
     describe 'for unauthorized access/invalid API key' do
       subject { OracleOfBacon::Response.new(File.read 'spec/unauthorized_access.xml') }
       its(:type) { should == :error }
@@ -69,7 +70,7 @@ describe OracleOfBacon do
       its(:data) { should match /unknown/i }
     end
   end
-  describe 'constructing URI', :pending => true do
+  describe 'constructing URI' do
     subject do
       oob = OracleOfBacon.new('fake_key')
       oob.from = '3%2 "a' ; oob.to = 'George Clooney'
@@ -81,7 +82,7 @@ describe OracleOfBacon do
     it { should match /b=George\+Clooney/ }
     it { should match /a=3%252\+%22a/ }
   end
-  describe 'service connection', :pending => true do
+  describe 'service connection' do
     before(:each) do
       @oob = OracleOfBacon.new
       allow(@oob).to receive(:valid?).and_return(true)

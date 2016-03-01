@@ -4,6 +4,7 @@ require 'cgi'                   # for escaping URIs
 require 'nokogiri'              # XML parser
 require 'active_model'          # for validations
 
+
 class OracleOfBacon
 
   class InvalidError < RuntimeError ; end
@@ -38,14 +39,20 @@ class OracleOfBacon
     rescue Timeout::Error, Errno::EINVAL, Errno::ECONNRESET, EOFError,
       Net::HTTPBadResponse, Net::HTTPHeaderSyntaxError,
       Net::ProtocolError => e
+      raise NetworkError, e.message
       # convert all of these into a generic OracleOfBacon::NetworkError,
       #  but keep the original error message
       # your code here
     end
-    # your code here: create the OracleOfBacon::Response object
+    @response = Response.new(xml)
   end
 
   def make_uri_from_arguments
+    @uri = 'http://oracleofbacon.org/cgi-bin/xml?p=' +
+      CGI.escape(api_key) +
+      '&a=' + CGI.escape(from) +
+      '&b=' + CGI.escape(to) 
+
     # your code here: set the @uri attribute to properly-escaped URI
     #   constructed from the @from, @to, @api_key arguments
   end
@@ -63,14 +70,28 @@ class OracleOfBacon
     def parse_response
       if ! @doc.xpath('/error').empty?
         parse_error_response
-      # your code here: 'elsif' clauses to handle other responses
-      # for responses not matching the 3 basic types, the Response
-      # object should have type 'unknown' and data 'unknown response'         
+    elsif ! @doc.xpath('/spellcheck').empty?
+    	parse_spellcheck_response
+    elsif ! @doc.xpath('/link').empty?
+    	parse_graph_response
+    else
+    	@type = :unknown
+    	@data = 'unknown response'        
       end
     end
     def parse_error_response
       @type = :error
       @data = 'Unauthorized access'
+    end
+    def parse_spellcheck_response
+    	@type = :spellcheck
+    	@data = @doc.xpath('//match').map(&:text)
+    end
+    def parse_graph_response
+    	@type = :graph
+    	movies = @doc.xpath('//movie')
+    	actors = @doc.xpath('//actor')
+    	@data = actors.zip(movies).flatten.compact.map(&:text)
     end
   end
 end
